@@ -85,11 +85,16 @@ def construct_open_api_with_schema_class(
 
     # update new_open_api with new #/components/schemas
     if PYDANTIC_V2:
-        _key_map, schema_definitions = models_json_schema(
+        key_map, schema_definitions = models_json_schema(
             [(c, get_mode(c)) for c in schema_classes],
             by_alias=by_alias,
             ref_template=ref_template,
         )
+
+        defs = schema_definitions[DEFS_KEY]
+        for (klass, _), ref in key_map.items():
+            if klass.__name__ not in defs:
+                defs[klass.__name__] = defs.pop(ref["$ref"].removeprefix(ref_prefix))
     else:
         schema_definitions = v1_schema(
             schema_classes, by_alias=by_alias, ref_prefix=ref_prefix
